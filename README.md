@@ -42,22 +42,30 @@ instance, in a cache) and load several units together:
 
 The code loaded refers to the symbols of the process by name (`dlsym`):
 the program must export them, as OCaml does for native executables on ELF
-systems (`-Wl,-E`, used for natdynlink) and for shared libraries.
+systems (`-Wl,-E`, used for natdynlink) and for shared libraries. On
+Windows, the symbols are looked up by flexdll (in the table of the symbols
+that flexlink builds for the programs and libraries that it links, as
+natdynlink does), then among the exports of the DLLs of the process (for
+the functions of the C library that the code calls directly, such as
+`sin`).
 
 ## Supported platforms
 
-OCaml 5.3 to 5.6, on Linux and macOS, amd64 and arm64. camljit also builds
-on other architectures and on Windows, with `Compile.available = false`:
-the code has to be compiled with external commands there.
+OCaml 5.3 to 5.6, on Linux and macOS, amd64 and arm64, and on Windows
+amd64 (mingw-w64). camljit also builds on other architectures, with
+`Compile.available = false`: the code has to be compiled with external
+commands there.
 
 ## Tests
 
 `dune runtest` evaluates code with `Compile.eval` (`tests/eval`), and checks
 that the internal assemblers encode the same machine code and relocations as
 the external assembler on modules of the standard library
-(`tests/encoder`: GNU binutils on Linux, Mach-O object files on macOS).
+(`tests/encoder`: GNU binutils on Linux, Mach-O object files on macOS, the
+COFF object files of the binutils of mingw-w64 on Windows).
 
-The GitLab CI (`.gitlab-ci.yml`) runs them on Linux amd64; the GitHub
-workflow (`.github/workflows/main.yml`) on Linux and macOS, amd64 and
-arm64, with OCaml 5.3 to 5.5 and the development version 5.6, and checks
-that camljit builds on Windows (without JIT).
+The GitLab CI (`.gitlab-ci.yml`) runs them on Linux amd64, and on Windows
+amd64 (mingw-w64) on a runner with the tag `windows`; the GitHub workflow
+(`.github/workflows/main.yml`) on Linux, macOS and Windows, amd64 and arm64
+(amd64 only on Windows), with OCaml 5.3 to 5.5 and the development version
+5.6.

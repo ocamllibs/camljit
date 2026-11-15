@@ -166,6 +166,8 @@ type immediate =
   | Imm64 of int64
   | Imm32_symbol of string * int64
     (** The 32-bit (sign-extended) address of a symbol, plus a constant. *)
+  | Imm64_symbol of string
+    (** The 64-bit address of a symbol ([movabsq]). *)
 
 (* [instruction ~prefixes ~rex_w ~opcode ~reg ~rm ~imm ~args ()] encodes an
    instruction: legacy [prefixes], a REX prefix if needed, the [opcode]
@@ -214,11 +216,11 @@ let instruction ?(prefixes = []) ?(rex_w = false) ~(opcode : int list)
   List.iter (fun o -> Buffer.add_char b (Char.chr o)) opcode;
   let add_int32 (n : int64) =
     Buffer.add_int32_le b (Int64.to_int32 n) in
-  let add_symbol_field ~kind ~target ~displacement =
+  let add_symbol_field ?(width = 4) ~kind ~target ~displacement () =
     fixups :=
-      { position = Buffer.length b; width = 4; kind; target; displacement }
+      { position = Buffer.length b; width; kind; target; displacement }
       :: !fixups;
-    add_int32 0L in
+    if width = 8 then Buffer.add_int64_le b 0L else add_int32 0L in
   let modrm md reg rm =
     Buffer.add_char b (Char.chr ((md lsl 6) lor ((reg land 7) lsl 3) lor (rm land 7))) in
   begin match rm with
@@ -231,13 +233,13 @@ let instruction ?(prefixes = []) ?(rex_w = false) ~(opcode : int list)
        | Direct s -> Relative32, s
        | Gotpcrel s -> Got_relative32, s
        | Plt s -> Branch32, s in
-     add_symbol_field ~kind ~target ~displacement:(Int64.of_int displ)
+     add_symbol_field ~kind ~target ~displacement:(Int64.of_int displ) ()
   | Some (Rm_mem { idx; scale; base; sym; displ; _ }) ->
      let displacement md =
        match sym with
        | Some s ->
           add_symbol_field ~kind:Absolute32_signed ~target:s
-            ~displacement:(Int64.of_int displ)
+            ~displacement:(Int64.of_int displ) ()
        | None ->
           if md = 1 then Buffer.add_int8 b displ
           else add_int32 (Int64.of_int displ) in
@@ -294,7 +296,9 @@ let instruction ?(prefixes = []) ?(rex_w = false) ~(opcode : int list)
   | Imm32 n -> add_int32 n
   | Imm64 n -> Buffer.add_int64_le b n
   | Imm32_symbol (s, n) ->
-     add_symbol_field ~kind:Absolute32_signed ~target:s ~displacement:n
+     add_symbol_field ~kind:Absolute32_signed ~target:s ~displacement:n ()
+  | Imm64_symbol s ->
+     add_symbol_field ~width:8 ~kind:Absolute64 ~target:s ~displacement:0L ()
   end;
   { code = Buffer.contents b; fixups = !fixups }
 
@@ -407,6 +411,12 @@ let mov (src : arg) (dst : arg) : encoded =
      let opcode = if size = Byte then 0xC6 else 0xC7 in
      instruction ~prefixes ~rex_w ~opcode:[opcode] ~reg:0 ~rm:(rm_of_arg dst)
        ~imm:(immediate_of_size size n) ~args ()
+  | Sym s, Reg64 r when X86_proc.windows ->
+     (* [movabsq $s, %r]: on Windows, the backend loads the addresses of
+        symbols with 64-bit immediates (see [X86_gas]), the code being
+        position-dependent. *)
+     instruction ~rex_w:true ~opcode:[0xB8] ~reg:(reg_number r)
+       ~imm:(Imm64_symbol s) ~args ()
   | Sym s, _ ->
      instruction ~prefixes ~rex_w ~opcode:[0xC7] ~reg:0 ~rm:(rm_of_arg dst)
        ~imm:(Imm32_symbol (s, 0L)) ~args ()

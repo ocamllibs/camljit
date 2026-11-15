@@ -16,9 +16,9 @@
 
 val available : bool
 (** [true] if the code can be assembled in memory: on amd64 and arm64, in
-    native code, except on Windows. Otherwise, the code has to be assembled and linked by
-    external commands (for instance, with [ocamlopt -shared] and
-    [Dynlink]). *)
+    native code (Linux, macOS and Windows). Otherwise, the code has to be
+    assembled and linked by external commands (for instance, with
+    [ocamlopt -shared] and [Dynlink]). *)
 
 val lambda_program : string -> Typedtree.implementation -> Lambda.program
 (** [lambda_program module_name impl] translates and simplifies [impl] (with
