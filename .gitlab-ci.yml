@@ -1,0 +1,17 @@
+# Builds camljit and runs `dune runtest` with each supported version of
+# OCaml (images of the OCaml Docker base images, with GNU binutils for the
+# comparison of the encoders with the external assembler).
+
+.test:
+  parallel:
+    matrix:
+      - OCAML_VERSION: ["5.3", "5.4", "5.5"]
+  image: ocaml/opam:debian-13-ocaml-$OCAML_VERSION
+  script:
+    - sudo apt-get update && sudo apt-get install -y binutils
+    - opam install --deps-only --with-test -y .
+    - opam exec -- dune build
+    - opam exec -- dune runtest
+
+test:
+  extends: .test

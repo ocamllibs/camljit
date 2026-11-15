@@ -1,0 +1,51 @@
+; The internal assembler is only available on amd64 and arm64: the modules
+; that use the backend of the compiler for these architectures are in amd64/
+; and arm64/, and generic/ has their replacements for the other
+; architectures. The instructions of the amd64 backend that depend on the
+; version of OCaml are recognized by X86_extra (amd64/ocaml-*/), so that the
+; library is compiled without preprocessor (metapp depends on camljit).
+
+(rule
+ (targets assembler.ml x86_encoder.ml)
+ (enabled_if (= %{architecture} amd64))
+ (deps amd64/assembler.ml amd64/x86_encoder.ml)
+ (action
+  (progn
+   (copy amd64/assembler.ml assembler.ml)
+   (copy amd64/x86_encoder.ml x86_encoder.ml))))
+
+(rule
+ (targets x86_extra.ml)
+ (enabled_if
+  (and (= %{architecture} amd64) (>= %{ocaml_version} 5.6)))
+ (deps amd64/ocaml-5.6/x86_extra.ml)
+ (action (copy amd64/ocaml-5.6/x86_extra.ml x86_extra.ml)))
+
+(rule
+ (targets x86_extra.ml)
+ (enabled_if
+  (and (= %{architecture} amd64) (< %{ocaml_version} 5.6)))
+ (deps amd64/ocaml-5.3/x86_extra.ml)
+ (action (copy amd64/ocaml-5.3/x86_extra.ml x86_extra.ml)))
+
+(rule
+ (targets assembler.ml arm64_encoder.ml)
+ (enabled_if (= %{architecture} arm64))
+ (deps arm64/assembler.ml arm64/arm64_encoder.ml)
+ (action
+  (progn
+   (copy arm64/assembler.ml assembler.ml)
+   (copy arm64/arm64_encoder.ml arm64_encoder.ml))))
+
+(rule
+ (targets assembler.ml)
+ (enabled_if
+  (and (<> %{architecture} amd64) (<> %{architecture} arm64)))
+ (deps generic/assembler.ml)
+ (action (copy generic/assembler.ml assembler.ml)))
+
+(library
+ (name camljit)
+ (public_name camljit)
+ (foreign_stubs (language c) (names camljit_stubs))
+ (libraries compiler-libs.optcomp))

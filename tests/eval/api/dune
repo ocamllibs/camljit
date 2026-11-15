@@ -1,0 +1,5 @@
+; Values of the test program used by the evaluated code (unwrapped, so that
+; the evaluated code finds the interface by its name).
+(library
+ (name test_eval_api)
+ (wrapped false))
