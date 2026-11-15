@@ -1,17 +1,33 @@
 # Builds camljit and runs `dune runtest` with each supported version of
-# OCaml (images of the OCaml Docker base images, with GNU binutils for the
-# comparison of the encoders with the external assembler).
+# OCaml, on the OKD runners of gitlab.inria.fr (Kubernetes executors: the
+# project needs the runners `qlf-okd-linux-*` assigned in Settings > CI/CD >
+# Runners), in the images of the OCaml Docker base images, with GNU
+# binutils for the comparison of the encoders with the external assembler.
 
-.test:
+workflow:
+  rules:
+    # Branch pipelines only (no duplicate merge request pipelines).
+    - if: $CI_COMMIT_BRANCH
+
+default:
+  # The runners sometimes fail to create the containers of the jobs.
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - scheduler_failure
+
+test:
+  tags: [qlf-okd-linux-medium]
   parallel:
     matrix:
       - OCAML_VERSION: ["5.3", "5.4", "5.5"]
   image: ocaml/opam:debian-13-ocaml-$OCAML_VERSION
+  variables:
+    # In the pods, `nproc` gives the CPUs of the node, not the quota.
+    DUNE_JOBS: 2
   script:
     - sudo apt-get update && sudo apt-get install -y binutils
     - opam install --deps-only --with-test -y .
-    - opam exec -- dune build
-    - opam exec -- dune runtest
-
-test:
-  extends: .test
+    - opam exec -- dune build -j $DUNE_JOBS
+    - opam exec -- dune runtest -j $DUNE_JOBS
