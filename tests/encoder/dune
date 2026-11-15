@@ -1,0 +1,96 @@
+; Checks that the internal assembler of the JIT encodes the same machine code
+; and relocations as the external assembler, on modules of the standard
+; library (copied, so that they are compiled as ordinary modules). On amd64,
+; the comparison uses GNU binutils (objcopy, objdump, readelf): Linux only.
+; On arm64, the object files are read as Mach-O on macOS, and as ELF with
+; GNU binutils on Linux.
+
+(executable
+ (name encoder_check)
+ (enabled_if (= %{architecture} amd64))
+ (libraries compiler-libs.optcomp camljit))
+
+(rule
+ (alias runtest)
+ (enabled_if (and (= %{architecture} amd64) (= %{system} linux)))
+ (deps
+  (:list %{ocaml_where}/list.ml)
+  (:hashtbl %{ocaml_where}/hashtbl.ml)
+  (:float %{ocaml_where}/float.ml)
+  (:format %{ocaml_where}/camlinternalFormat.ml)
+  (:bigarray %{ocaml_where}/bigarray.ml)
+  (:random %{ocaml_where}/random.ml)
+  (:int %{ocaml_where}/int.ml)
+  (:atomic %{ocaml_where}/atomic.ml))
+ (action
+  (progn
+   (copy %{list} chk_list.ml)
+   (copy %{hashtbl} chk_hashtbl.ml)
+   (copy %{float} chk_float.ml)
+   (copy %{format} chk_format.ml)
+   (copy %{bigarray} chk_bigarray.ml)
+   (copy %{random} chk_random.ml)
+   (copy %{int} chk_int.ml)
+   (copy %{atomic} chk_atomic.ml)
+   (run %{exe:encoder_check.exe} -c -w -a chk_list.ml chk_hashtbl.ml
+    chk_float.ml chk_format.ml chk_bigarray.ml chk_random.ml chk_int.ml
+    chk_atomic.ml))))
+
+(executable
+ (name arm64_encoder_check)
+ (enabled_if (= %{architecture} arm64))
+ (libraries compiler-libs.optcomp camljit))
+
+(rule
+ (alias runtest)
+ (enabled_if
+  (and (= %{architecture} arm64)
+   (or (= %{system} macosx) (= %{system} linux))))
+ (deps
+  (:list %{ocaml_where}/list.ml)
+  (:hashtbl %{ocaml_where}/hashtbl.ml)
+  (:float %{ocaml_where}/float.ml)
+  (:format %{ocaml_where}/camlinternalFormat.ml)
+  (:bigarray %{ocaml_where}/bigarray.ml)
+  (:random %{ocaml_where}/random.ml)
+  (:bytes %{ocaml_where}/bytes.ml)
+  (:int64 %{ocaml_where}/int64.ml)
+  (:int %{ocaml_where}/int.ml)
+  (:atomic %{ocaml_where}/atomic.ml))
+ (action
+  (progn
+   (copy %{list} chk_list.ml)
+   (copy %{hashtbl} chk_hashtbl.ml)
+   (copy %{float} chk_float.ml)
+   (copy %{format} chk_format.ml)
+   (copy %{bigarray} chk_bigarray.ml)
+   (copy %{random} chk_random.ml)
+   (copy %{bytes} chk_bytes.ml)
+   (copy %{int64} chk_int64.ml)
+   (copy %{int} chk_int.ml)
+   (copy %{atomic} chk_atomic.ml)
+   (run %{exe:arm64_encoder_check.exe} -S -c -w -a chk_list.ml
+    chk_hashtbl.ml chk_float.ml chk_format.ml chk_bigarray.ml chk_random.ml
+    chk_bytes.ml chk_int64.ml chk_int.ml chk_atomic.ml))))
+
+; The instructions of OCaml >= 5.6 that the modules above do not use
+; ([Int.leading_zeros] and [Int.trailing_zeros] are introduced in OCaml 5.5).
+
+(rule
+ (alias runtest)
+ (enabled_if
+  (and (= %{architecture} arm64)
+   (or (= %{system} macosx) (= %{system} linux))
+   (>= %{ocaml_version} 5.5)))
+ (deps chk_ocaml56.ml)
+ (action
+  (run %{exe:arm64_encoder_check.exe} -S -c -w -a chk_ocaml56.ml)))
+
+(rule
+ (alias runtest)
+ (enabled_if
+  (and (= %{architecture} amd64) (= %{system} linux)
+   (>= %{ocaml_version} 5.5)))
+ (deps chk_ocaml56.ml)
+ (action
+  (run %{exe:encoder_check.exe} -c -w -a chk_ocaml56.ml)))

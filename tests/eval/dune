@@ -1,0 +1,18 @@
+; Evaluates code with Camljit.Compile.eval in a native program: the units
+; refer to the values of the program (Test_eval_api), call generic
+; functions (partial applications), raise exceptions, and allocate.
+
+(executable
+ (name test_eval)
+ (modes native)
+ (enabled_if
+  (or (= %{architecture} amd64) (= %{architecture} arm64)))
+ (link_flags (-linkall))
+ (libraries camljit compiler-libs.common test_eval_api))
+
+(rule
+ (alias runtest)
+ (enabled_if
+  (or (= %{architecture} amd64) (= %{architecture} arm64)))
+ (deps api/.test_eval_api.objs/byte/test_eval_api.cmi)
+ (action (run %{exe:test_eval.exe} api/.test_eval_api.objs/byte)))
