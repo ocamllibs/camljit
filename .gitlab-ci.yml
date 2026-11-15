@@ -37,7 +37,8 @@ test:
     - git config --global --add safe.directory "$CI_PROJECT_DIR"
     - opam install --deps-only --with-test -y .
     - opam exec -- dune build -j $DUNE_JOBS
-    - opam exec -- dune runtest -j $DUNE_JOBS
+    # Listed in the log, even when dune could reuse their results.
+    - opam exec -- dune runtest -j $DUNE_JOBS --force --display short
 
 test-windows:
   tags: [windows]
@@ -54,4 +55,4 @@ test-windows:
   script:
     - . ci/windows-env.ps1
     - dune build
-    - dune runtest
+    - dune runtest --force --display short
