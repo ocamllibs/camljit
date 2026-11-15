@@ -17,6 +17,8 @@ let check (name : string) (expected : string list) : unit =
         (String.concat "; " results) (String.concat "; " expected);
       exit 1
     end;
+  (* What was checked, in the log of the test. *)
+  Printf.printf "ok: %s\n%!" name;
   Test_eval_api.results := []
 
 (* Where the JIT is not available (bytecode), [eval] fails: its users then
@@ -28,6 +30,8 @@ let check_unavailable () =
 
 let main () =
   if not Camljit.Compile.available then (check_unavailable (); exit 0);
+  Printf.printf "JIT available (%s, %s): evaluating units\n%!"
+    Config.architecture Config.system;
   let env = initial_env () in
   let eval source = Camljit.Compile.eval env (parse source) in
   eval {| let () = Test_eval_api.record "hello" |};

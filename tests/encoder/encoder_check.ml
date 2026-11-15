@@ -188,6 +188,7 @@ let check_relocations
     end
 
 let check (program : X86_ast.asm_program) (outfile : string) : unit =
+  let failures_before = !failures in
   let asm = Filename.chop_extension outfile ^ ".check.s" in
   Out_channel.with_open_text asm (fun oc -> X86_gas.generate_asm oc program);
   run (Printf.sprintf "%s -o %s %s" (tool "as") (Filename.quote outfile)
@@ -241,7 +242,15 @@ let check (program : X86_ast.asm_program) (outfile : string) : unit =
              (lines_around (disassemble expected) i)
              (lines_around (disassemble section.contents) i)
          end) encoded.sections;
-  check_relocations relocations outfile encoded
+  check_relocations relocations outfile encoded;
+  (* What was compared, in the log of the test. *)
+  if !failures = failures_before then
+    Printf.printf "%s: %d sections (%d bytes) and %d relocations identical \
+                   to the assembler\n%!"
+      outfile (Array.length encoded.sections)
+      (Array.fold_left (fun n (s : Camljit.Object.section) ->
+         n + String.length s.contents) 0 encoded.sections)
+      (List.length relocations)
 
 (* The order of the no-operations with which the external assembler pads
    code, which depends on its version (see [X86_encoder.padding_order]): a
