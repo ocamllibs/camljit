@@ -239,6 +239,7 @@ let words_around (contents : string) (offset : int) : string =
   String.concat "\n" (loop start [])
 
 let check (asm : string) (obj : string) : unit =
+  let failures_before = !failures in
   let encoded =
     Camljit.Arm64_encoder.assemble (In_channel.with_open_bin asm In_channel.input_all) in
   let expected = if elf then read_elf obj else read_macho obj in
@@ -312,7 +313,16 @@ let check (asm : string) (obj : string) : unit =
                 (List.map show (first (only_in expected_relocations actual_relocations))))
              (String.concat "\n    "
                 (List.map show (first (only_in actual_relocations expected_relocations))))
-         end) encoded.sections
+         end) encoded.sections;
+  (* What was compared, in the log of the test. *)
+  if !failures = failures_before then
+    Printf.printf "%s: %d sections (%d bytes) and %d relocations identical \
+                   to the assembler\n%!"
+      asm (Array.length encoded.sections)
+      (Array.fold_left (fun n (s : Camljit.Object.section) ->
+         n + String.length s.contents) 0 encoded.sections)
+      (Array.fold_left (fun n (s : Camljit.Object.section) ->
+         n + List.length s.relocations) 0 encoded.sections)
 
 let () =
   let status = Optmaindriver.main Sys.argv Format.err_formatter in

@@ -1,7 +1,8 @@
 ; Checks that the internal assembler of the JIT encodes the same machine code
 ; and relocations as the external assembler, on modules of the standard
 ; library (copied, so that they are compiled as ordinary modules). On amd64,
-; the comparison uses GNU binutils (objcopy, objdump, readelf): Linux only.
+; the comparison uses GNU binutils (objcopy, objdump, readelf) on Linux, and
+; the binutils of mingw-w64 (COFF object files) on Windows.
 ; On arm64, the object files are read as Mach-O on macOS, and as ELF with
 ; GNU binutils on Linux.
 
@@ -12,7 +13,8 @@
 
 (rule
  (alias runtest)
- (enabled_if (and (= %{architecture} amd64) (= %{system} linux)))
+ (enabled_if (and (= %{architecture} amd64)
+   (or (= %{system} linux) (= %{system} mingw64))))
  (deps
   (:list %{ocaml_where}/list.ml)
   (:hashtbl %{ocaml_where}/hashtbl.ml)
@@ -89,7 +91,8 @@
 (rule
  (alias runtest)
  (enabled_if
-  (and (= %{architecture} amd64) (= %{system} linux)
+  (and (= %{architecture} amd64)
+   (or (= %{system} linux) (= %{system} mingw64))
    (>= %{ocaml_version} 5.5)))
  (deps chk_ocaml56.ml)
  (action

@@ -3,6 +3,10 @@
 # project needs the runners `qlf-okd-linux-*` assigned in Settings > CI/CD >
 # Runners), in the images of the OCaml Docker base images, with GNU
 # binutils for the comparison of the encoders with the external assembler.
+#
+# test-windows: the same tests on the Windows runner (tag `windows`, a shell
+# executor with PowerShell 7, not an OKD runner), with OCaml for mingw-w64,
+# in an opam switch kept on the runner (`ci/windows-env.ps1`).
 
 workflow:
   rules:
@@ -33,4 +37,22 @@ test:
     - git config --global --add safe.directory "$CI_PROJECT_DIR"
     - opam install --deps-only --with-test -y .
     - opam exec -- dune build -j $DUNE_JOBS
-    - opam exec -- dune runtest -j $DUNE_JOBS
+    # Listed in the log, even when dune could reuse their results.
+    - opam exec -- dune runtest -j $DUNE_JOBS --force --display short
+
+test-windows:
+  tags: [windows]
+  # No image: the switch is on the runner, shared by the jobs (serialized).
+  resource_group: windows-switch
+  variables:
+    OCAML_VERSION: "5.3"
+    # Git for Windows converts the line endings of the checkout
+    # (core.autocrlf in its system configuration): the files are kept as
+    # they are in the repository.
+    GIT_CONFIG_COUNT: 1
+    GIT_CONFIG_KEY_0: core.autocrlf
+    GIT_CONFIG_VALUE_0: "false"
+  script:
+    - . ci/windows-env.ps1
+    - dune build
+    - dune runtest --force --display short
