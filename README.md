@@ -65,7 +65,7 @@ the external assembler on modules of the standard library
 COFF object files of the binutils of mingw-w64 on Windows).
 
 The GitLab CI (`.gitlab-ci.yml`) runs them on Linux amd64, and on Windows
-amd64 (mingw-w64) on a runner with the tag `Windows`; the GitHub workflow
+amd64 (mingw-w64) on a runner with the tag `windows`; the GitHub workflow
 (`.github/workflows/main.yml`) on Linux, macOS and Windows, amd64 and arm64
 (amd64 only on Windows), with OCaml 5.3 to 5.5 and the development version
 5.6.

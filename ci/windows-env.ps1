@@ -1,5 +1,5 @@
 # The environment of the Windows job of the CI (see `.gitlab-ci.yml`),
-# dot-sourced by the job (PowerShell 7): the runner (tag `Windows`) is a
+# dot-sourced by the job (PowerShell 7): the runner (tag `windows`) is a
 # shell executor with Git for Windows, but without OCaml.
 #
 # The first job installs opam (the Windows binary), an opam root with its

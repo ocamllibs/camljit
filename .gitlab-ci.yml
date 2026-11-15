@@ -4,7 +4,7 @@
 # Runners), in the images of the OCaml Docker base images, with GNU
 # binutils for the comparison of the encoders with the external assembler.
 #
-# test-windows: the same tests on the Windows runner (tag `Windows`, a shell
+# test-windows: the same tests on the Windows runner (tag `windows`, a shell
 # executor with PowerShell 7, not an OKD runner), with OCaml for mingw-w64,
 # in an opam switch kept on the runner (`ci/windows-env.ps1`).
 
@@ -40,7 +40,7 @@ test:
     - opam exec -- dune runtest -j $DUNE_JOBS
 
 test-windows:
-  tags: [Windows]
+  tags: [windows]
   # No image: the switch is on the runner, shared by the jobs (serialized).
   resource_group: windows-switch
   variables:
