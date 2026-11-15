@@ -1,0 +1,71 @@
+# Builds camljit and runs `dune runtest` on the platforms of the JIT:
+# Linux and macOS, amd64 and arm64, with each supported version of OCaml.
+# On Linux, the encoders are compared with GNU binutils (amd64 and arm64);
+# on macOS arm64, with the Mach-O object files of the assembler of the
+# system; on macOS amd64, only the evaluation of code is tested (see
+# `tests/encoder/dune`). The GitLab CI (`.gitlab-ci.yml`) only has amd64
+# Linux runners.
+name: main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest # amd64
+          - ubuntu-24.04-arm # arm64
+          - macos-latest # arm64
+          - macos-15-intel # amd64
+        ocaml-compiler:
+          - "5.3"
+          - "5.4"
+          - "5.5"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test --yes
+      - name: Build
+        run: opam exec -- dune build
+      - name: Test
+        run: opam exec -- dune runtest
+
+  # OCaml 5.6 is not released: its development version, whose backends emit
+  # instructions that the previous versions do not (`tests/encoder`
+  # checks them with `chk_ocaml56.ml`). Allowed to fail, since the
+  # development version moves.
+  ocaml-trunk:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ocaml-variants.5.6.0+trunk
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test --yes
+      - name: Build
+        run: opam exec -- dune build
+      - name: Test
+        run: opam exec -- dune runtest

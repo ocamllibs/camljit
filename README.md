@@ -55,3 +55,7 @@ build, with `Compile.available = false`). Not available on Windows.
 that the internal assemblers encode the same machine code and relocations as
 the external assembler on modules of the standard library
 (`tests/encoder`: GNU binutils on Linux, Mach-O object files on macOS).
+
+The GitLab CI (`.gitlab-ci.yml`) runs them on Linux amd64; the GitHub
+workflow (`.github/workflows/main.yml`) on Linux and macOS, amd64 and
+arm64, with OCaml 5.3 to 5.5 and the development version 5.6.
