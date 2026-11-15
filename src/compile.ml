@@ -1,11 +1,7 @@
 (* The pipeline of [ocamlopt] for units compiled in the current process, with
    the assembly of the code in memory ([Assembler]). *)
 
-(* On Windows, the backend emits COFF assembly code, which neither the
-   internal assemblers nor the loader support (and the primitives of the
-   loader are not implemented, see camljit_stubs.c). *)
-let available =
-  Assembler.available && Sys.backend_type = Native && not Sys.win32
+let available = Assembler.available && Sys.backend_type = Native
 
 (* Stolen from native/topeval.ml *)
 module Backend = struct

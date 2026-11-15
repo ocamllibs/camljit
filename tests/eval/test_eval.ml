@@ -19,7 +19,7 @@ let check (name : string) (expected : string list) : unit =
     end;
   Test_eval_api.results := []
 
-(* Where the JIT is not available (Windows), [eval] fails: its users then
+(* Where the JIT is not available (bytecode), [eval] fails: its users then
    compile the code with external commands. *)
 let check_unavailable () =
   match Camljit.Compile.eval (initial_env ()) (parse "let () = ()") with
@@ -50,6 +50,15 @@ let main () =
     let () = Test_eval_api.record (List.nth l 99_999)
     let () = Gc.compact () |};
   check "gc" ["99999"];
+  (* Functions of the C library called directly by the code ([sin] and
+     [pow], unboxed externals): on Windows, they are looked up among the
+     exports of the DLLs of the process. *)
+  eval {|
+    let () =
+      Test_eval_api.record
+        (Printf.sprintf "%.1f" (sin (Sys.opaque_identity 0.)
+                                +. Float.pow (Sys.opaque_identity 2.) 3.)) |};
+  check "C functions" ["8.0"];
   (* Exceptions raised by the initialization of a unit. *)
   begin match eval {| let () = raise (Failure "from unit") |} with
   | () -> prerr_endline "exception: not raised"; exit 1
