@@ -28,6 +28,9 @@ test:
     DUNE_JOBS: 2
   script:
     - sudo apt-get update && sudo apt-get install -y binutils
+    # The checkout is not owned by the user of the image (opam): git, run
+    # by opam to list the files of the package, refuses it otherwise.
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
     - opam install --deps-only --with-test -y .
     - opam exec -- dune build -j $DUNE_JOBS
     - opam exec -- dune runtest -j $DUNE_JOBS
