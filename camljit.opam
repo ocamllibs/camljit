@@ -36,5 +36,3 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/thierry-martinez/camljit.git"
-# The loader maps memory with mmap and resolves symbols with dlsym.
-available: os != "win32"

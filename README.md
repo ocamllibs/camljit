@@ -46,8 +46,9 @@ systems (`-Wl,-E`, used for natdynlink) and for shared libraries.
 
 ## Supported platforms
 
-OCaml 5.3 to 5.6, on Linux and macOS, amd64 and arm64 (other architectures
-build, with `Compile.available = false`). Not available on Windows.
+OCaml 5.3 to 5.6, on Linux and macOS, amd64 and arm64. camljit also builds
+on other architectures and on Windows, with `Compile.available = false`:
+the code has to be compiled with external commands there.
 
 ## Tests
 
@@ -58,4 +59,5 @@ the external assembler on modules of the standard library
 
 The GitLab CI (`.gitlab-ci.yml`) runs them on Linux amd64; the GitHub
 workflow (`.github/workflows/main.yml`) on Linux and macOS, amd64 and
-arm64, with OCaml 5.3 to 5.5 and the development version 5.6.
+arm64, with OCaml 5.3 to 5.5 and the development version 5.6, and checks
+that camljit builds on Windows (without JIT).

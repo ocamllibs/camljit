@@ -16,16 +16,21 @@
 /* Declared by caml/globroots.h for native code only. */
 extern void caml_register_dyn_globals(void **globals, int nglobals);
 
+#include <string.h>
+
+#ifndef _WIN32
 #include <dlfcn.h>
 #include <errno.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 /* Addresses are represented by OCaml integers (user-space addresses fit in
    62 bits). */
 #define Addr_val(v) ((char *) Long_val(v))
 #define Val_addr(p) Val_long((intnat) (p))
+
+#ifndef _WIN32
 
 CAMLprim value camljit_page_size(value unit)
 {
@@ -76,6 +81,55 @@ CAMLprim value camljit_self_address(value unit)
 {
   return Val_addr(&camljit_self_address);
 }
+
+#else
+
+/* On Windows, the code is not loaded in memory ([Compile.available] is
+   false: the code produced by the backend for Windows is not supported by
+   the internal assembler and the loader): the primitives that depend on
+   the system fail, so that camljit builds and its users fall back to
+   external commands. */
+
+static void camljit_unsupported(void)
+{
+  caml_failwith("camljit: loading code in memory is not supported on Windows");
+}
+
+CAMLprim value camljit_page_size(value unit)
+{
+  camljit_unsupported();
+  return Val_unit;
+}
+
+CAMLprim value camljit_map(value hint, value size)
+{
+  camljit_unsupported();
+  return Val_unit;
+}
+
+CAMLprim value camljit_write(value address, value contents)
+{
+  camljit_unsupported();
+  return Val_unit;
+}
+
+CAMLprim value camljit_protect(value address, value size, value executable)
+{
+  camljit_unsupported();
+  return Val_unit;
+}
+
+CAMLprim value camljit_dlsym(value name)
+{
+  return Val_addr(NULL);
+}
+
+CAMLprim value camljit_self_address(value unit)
+{
+  return Val_addr(&camljit_self_address);
+}
+
+#endif
 
 /* Registers a unit in the runtime: its frame table (for the GC and the
    exceptions), its global roots, and its code (for marshaling closures and

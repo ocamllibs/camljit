@@ -1,2 +1,0 @@
-# The loader maps memory with mmap and resolves symbols with dlsym.
-available: os != "win32"

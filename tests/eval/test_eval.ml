@@ -19,8 +19,15 @@ let check (name : string) (expected : string list) : unit =
     end;
   Test_eval_api.results := []
 
+(* Where the JIT is not available (Windows), [eval] fails: its users then
+   compile the code with external commands. *)
+let check_unavailable () =
+  match Camljit.Compile.eval (initial_env ()) (parse "let () = ()") with
+  | () -> prerr_endline "eval: no failure without JIT"; exit 1
+  | exception Failure _ -> print_endline "JIT not available: eval fails"
+
 let main () =
-  assert Camljit.Compile.available;
+  if not Camljit.Compile.available then (check_unavailable (); exit 0);
   let env = initial_env () in
   let eval source = Camljit.Compile.eval env (parse source) in
   eval {| let () = Test_eval_api.record "hello" |};
