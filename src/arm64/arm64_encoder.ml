@@ -27,7 +27,7 @@ let () =
     | Unsupported msg -> Some ("Arm64_encoder: unsupported " ^ msg)
     | _ -> None)
 
-let macosx = Ocaml_common.Config.system = "macosx"
+let macosx = Config.system = "macosx"
 
 let text_section_name = if macosx then "__TEXT,__text" else ".text"
 

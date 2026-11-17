@@ -194,7 +194,7 @@ let read_elf (obj : string) : macho_section list =
           relocations })
     names
 
-let elf = Ocaml_common.Config.system <> "macosx"
+let elf = Config.system <> "macosx"
 
 let encoder_kind (kind : Camljit.Object.relocation_kind) : string =
   match kind with

@@ -1,15 +1,14 @@
 # Builds camljit and runs `dune runtest` on the platforms of the JIT:
-# Linux and macOS, amd64 and arm64, and Windows (mingw-w64), amd64 and arm64,
-# with each supported version of OCaml. On Linux, the encoders are compared
+# Linux and macOS, amd64 and arm64, and Windows (mingw-w64, amd64), with each
+# supported version of OCaml. On Linux, the encoders are compared
 # with GNU binutils (amd64 and arm64); on macOS arm64, with the Mach-O object
 # files of the assembler of the system; on macOS amd64, only the evaluation
 # of code is tested (see `tests/encoder/dune`); on Windows, with the COFF
-# object files of the binutils of mingw-w64. OCaml has no native port to
-# Windows arm64: there, the mingw-w64 amd64 compiler (and the code of the
-# JIT) runs under the x64 emulation of Windows. The tests are run with
-# `--force --display short`, so that the log lists them (and their output)
-# even when dune could reuse their results. The GitLab CI (`.gitlab-ci.yml`)
-# has amd64 Linux runners and a Windows runner.
+# object files of the binutils of mingw-w64. Windows arm64 is not tested:
+# OCaml has no native port to it, and setup-ocaml has no opam binary for it.
+# The tests are run with `--force --display short`, so that the log lists
+# them (and their output) even when dune could reuse their results. The
+# GitLab CI (`.gitlab-ci.yml`) has amd64 Linux runners and a Windows runner.
 name: main
 on:
   push:
@@ -29,7 +28,6 @@ jobs:
           - macos-latest # arm64
           - macos-15-intel # amd64
           - windows-latest # amd64, mingw-w64
-          - windows-11-arm # arm64, with the amd64 compiler (emulated)
         ocaml-compiler:
           - "5.3"
           - "5.4"

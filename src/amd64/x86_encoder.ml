@@ -836,13 +836,19 @@ let collect (program : asm_program) : program_state =
     | NewLabel (l, _) ->
        Hashtbl.replace state.defined l state.current.section_name;
        add_item state (Label l)
-    | Global s -> Hashtbl.replace state.globals s ()
+    | Global s | Private_extern s ->
+       (* On macOS, the generic functions ([caml_curryN], ...) are declared
+          [.private_extern] (PR#4690) instead of [.globl]: they must still be
+          visible to the units loaded after them (see
+          [Compile.load_generic_functions]), since [dlsym] does not find
+          them in the program either. *)
+       Hashtbl.replace state.globals s ()
     | Section (names, _, _) -> switch_section state (section_name names)
     | Set (s, c) -> Hashtbl.replace state.aliases s c
     | Comment _ | External _ | Mode386 | Model _ | Cfi_adjust_cfa_offset _
     | Cfi_endproc | Cfi_startproc | Cfi_remember_state | Cfi_restore_state
     | Cfi_def_cfa_register _ | Cfi_def_cfa_offset _ | File _
-    | Indirect_symbol _ | Loc _ | Private_extern _ | Size _ | Type _ ->
+    | Indirect_symbol _ | Loc _ | Size _ | Type _ ->
        ()) program;
   state
 
